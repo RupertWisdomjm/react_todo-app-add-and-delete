@@ -19,9 +19,10 @@ type Filter = (typeof FILTERS)[keyof typeof FILTERS];
 type NewTodoFormProps = {
   inputRef: React.RefObject<HTMLInputElement>;
   onAdd: () => void;
+  disabled: boolean;
 };
 
-const NewTodoForm: React.FC<NewTodoFormProps> = ({ inputRef, onAdd }) => (
+const NewTodoForm: React.FC<NewTodoFormProps> = ({ inputRef, onAdd, disabled }) => (
   <form>
     <input
       data-cy="NewTodoField"
@@ -30,6 +31,7 @@ const NewTodoForm: React.FC<NewTodoFormProps> = ({ inputRef, onAdd }) => (
       placeholder="What needs to be done?"
       autoFocus
       ref={inputRef}
+      disabled={disabled}
       onKeyDown={event => {
         if (event.key === 'Enter') {
           event.preventDefault();
@@ -290,7 +292,7 @@ export const App: React.FC = () => {
 
   const hasTodos = todos.length > 0;
   const hasCompleted = todos.some(todo => todo.completed);
-  const activeTodosCount = todos.filter(todo => !todo.completed).length;
+  const activeTodosCount = todos.filter(todo => !todo.completed && todo.id > 0).length;
   const areAllCompleted = hasTodos && todos.every(todo => todo.completed);
 
   const filteredTodos = todos.filter(todo => {
@@ -347,12 +349,12 @@ export const App: React.FC = () => {
       if (inputRef.current) {
         inputRef.current.value = '';
       }
-    } catch (error) {
+    } catch {
       setTodos(prevTodos => prevTodos.filter(todo => todo.id !== tempId));
       setErrorMessage('Unable to add a todo');
-      throw error;
     } finally {
       setLoadingId(null);
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
@@ -368,9 +370,8 @@ export const App: React.FC = () => {
       setTodos(prevTodos =>
         prevTodos.map(todo => (todo.id === id ? updatedTodo : todo)),
       );
-    } catch (error) {
+    } catch {
       setErrorMessage('Unable to update a todo');
-      throw error;
     } finally {
       setLoadingId(null);
     }
@@ -383,11 +384,11 @@ export const App: React.FC = () => {
     try {
       await client.delete(`/todos/${id}`);
       setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
-    } catch (error) {
+    } catch {
       setErrorMessage('Unable to delete a todo');
-      throw error;
     } finally {
       setLoadingId(null);
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
@@ -420,10 +421,9 @@ export const App: React.FC = () => {
         prevTodos.map(todo => (todo.id === id ? updatedTodo : todo)),
       );
       setEditingId(null);
-    } catch (error) {
+    } catch {
       setErrorMessage('Unable to update a todo');
       editInputRef.current?.focus();
-      throw error;
     } finally {
       setLoadingId(null);
     }
@@ -439,13 +439,25 @@ export const App: React.FC = () => {
     setLoadingIds(completedIds);
 
     try {
-      await Promise.all(completedIds.map(id => client.delete(`/todos/${id}`)));
-      setTodos(prevTodos => prevTodos.filter(todo => !todo.completed));
-    } catch (error) {
-      setErrorMessage('Unable to delete a todo');
-      throw error;
+      const deleteResults = await Promise.allSettled(
+        completedIds.map(id => client.delete(`/todos/${id}`)),
+      );
+      const failedIds = completedIds.filter(
+        (_, index) => deleteResults[index].status === 'rejected',
+      );
+
+      setTodos(prevTodos =>
+        prevTodos.filter(
+          todo => !todo.completed || failedIds.includes(todo.id),
+        ),
+      );
+
+      if (failedIds.length > 0) {
+        setErrorMessage('Unable to delete a todo');
+      }
     } finally {
       setLoadingIds([]);
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
@@ -476,9 +488,8 @@ export const App: React.FC = () => {
           todo => updatedTodos.find(updated => updated.id === todo.id) ?? todo,
         ),
       );
-    } catch (error) {
+    } catch {
       setErrorMessage('Unable to update todos');
-      throw error;
     } finally {
       setLoadingIds([]);
     }
@@ -507,7 +518,11 @@ export const App: React.FC = () => {
             disabled={!hasTodos}
           />
 
-          <NewTodoForm inputRef={inputRef} onAdd={addTodo} />
+          <NewTodoForm
+            inputRef={inputRef}
+            onAdd={addTodo}
+            disabled={loadingId !== null && loadingId < 0}
+          />
         </header>
 
         {hasTodos && (
