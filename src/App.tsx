@@ -51,7 +51,10 @@ type TodoItemProps = {
 };
 
 const TodoItem: React.FC<TodoItemProps> = ({ todo, isLoading, onDelete }) => (
-  <div data-cy="Todo" className={classNames('todo', { completed: todo.completed })}>
+  <div
+    data-cy="Todo"
+    className={classNames('todo', { completed: todo.completed })}
+  >
     <label className="todo__status-label">
       <input
         data-cy="TodoStatus"
@@ -286,7 +289,9 @@ export const App: React.FC = () => {
     } catch {
       setErrorMessage('Unable to delete a todo');
     } finally {
-      setProcessingIds(prevIds => prevIds.filter(processingId => processingId !== id));
+      setProcessingIds(prevIds =>
+        prevIds.filter(processingId => processingId !== id),
+      );
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
@@ -310,13 +315,15 @@ export const App: React.FC = () => {
       (_, index) => deleteResults[index].status === 'rejected',
     );
 
-    setTodos(prevTodos => prevTodos.filter(todo => {
-      if (!todo.completed) {
-        return true;
-      }
+    setTodos(prevTodos =>
+      prevTodos.filter(todo => {
+        if (!todo.completed) {
+          return true;
+        }
 
-      return failedIds.includes(todo.id);
-    }));
+        return failedIds.includes(todo.id);
+      }),
+    );
 
     if (failedIds.length > 0) {
       setErrorMessage('Unable to delete a todo');
