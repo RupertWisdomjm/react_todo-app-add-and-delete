@@ -67,7 +67,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
   onRename,
   onCancelEdit,
 }) => (
-  <div data-cy="Todo" className={classNames('todo', { completed: todo.completed })}>
+  <div
+    data-cy="Todo"
+    className={classNames('todo', { completed: todo.completed })}
+  >
     <label className="todo__status-label">
       <input
         data-cy="TodoStatus"
@@ -429,7 +432,9 @@ export const App: React.FC = () => {
   const clearCompleted = async () => {
     setErrorMessage('');
 
-    const completedIds = todos.filter(todo => todo.completed).map(todo => todo.id);
+    const completedIds = todos
+      .filter(todo => todo.completed)
+      .map(todo => todo.id);
 
     setLoadingIds(completedIds);
 
