@@ -22,7 +22,11 @@ type NewTodoFormProps = {
   disabled: boolean;
 };
 
-const NewTodoForm: React.FC<NewTodoFormProps> = ({ inputRef, onAdd, disabled }) => (
+const NewTodoForm: React.FC<NewTodoFormProps> = ({
+  inputRef,
+  onAdd,
+  disabled,
+}) => (
   <form>
     <input
       data-cy="NewTodoField"
@@ -292,7 +296,9 @@ export const App: React.FC = () => {
 
   const hasTodos = todos.length > 0;
   const hasCompleted = todos.some(todo => todo.completed);
-  const activeTodosCount = todos.filter(todo => !todo.completed && todo.id > 0).length;
+  const activeTodosCount = todos.filter(
+    todo => !todo.completed && todo.id > 0,
+  ).length;
   const areAllCompleted = hasTodos && todos.every(todo => todo.completed);
 
   const filteredTodos = todos.filter(todo => {
